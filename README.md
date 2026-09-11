@@ -107,6 +107,33 @@ With `glow` installed the description and comments are rendered as markdown at
 the pane's width, and a resize re-renders to fit. Without it — or when the pane's
 output is not a terminal — the same content prints as plain text.
 
+## Sidebar issue label
+
+On herdr 0.7.4+, creating or opening an issue worktree also publishes a `linear`
+workspace metadata token, so the sidebar entry shows which issue the worktree is
+for: `BIT-1234`. The token carries no TTL, so it stays for the life of the
+workspace, and reporting it never affects the exit code — if herdr rejects it,
+the plugin logs a warning and the worktree is created all the same.
+
+Display it by adding `$linear` to `[ui.sidebar.spaces].rows` in
+`~/.config/herdr/config.toml`, then `herdr config check` and
+`herdr server reload-config`. This is herdr's default layout with the token
+appended; merge it into your own rows rather than replacing them:
+
+```toml
+[ui.sidebar.spaces]
+rows = [
+  ["state_icon", "workspace"],
+  ["branch", "git_status", "$linear"],
+]
+```
+
+- The plugin never edits herdr config; this is a one-time display setting.
+- Useful mainly when your branch names bury or truncate the identifier — the
+  `branch` token already shows it otherwise.
+- To drop the label, use the workspace id from `herdr workspace list`:
+  `herdr workspace report-metadata <id> --source plugin:tdi.worktree-from-linear --clear-token linear`.
+
 ## Develop
 
 ```bash

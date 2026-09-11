@@ -24,7 +24,9 @@ function fakeExec() {
     if (cmd === 'git' && args.includes('list')) return { status: 0, stdout: 'worktree /repo\nbranch refs/heads/main\n', stderr: '' };
     if (cmd === 'git' && args.includes('rev-parse')) return { status: 1, stdout: '', stderr: '' };
     if (cmd === 'git' && args.includes('fetch')) return { status: 0, stdout: '', stderr: '' };
-    if (args[0] === 'worktree') return { status: 0, stdout: '{"type":"worktree_created"}', stderr: '' };
+    if (args[0] === 'worktree') {
+      return { status: 0, stdout: '{"result":{"type":"worktree_created","workspace":{"workspace_id":"w42"}}}', stderr: '' };
+    }
     return { status: 0, stdout: '', stderr: '' };
   };
   return { exec, calls };
@@ -141,5 +143,33 @@ test('run falls back to the invoking repo for an unmapped team', async () => {
   const code = await run({ env: { HERDR_PLUGIN_CONFIG_DIR: dir, HERDR_WFP_CWD: '/repo', HERDR_BIN_PATH: 'herdr' }, exec, fetchFn, select: async (list) => list[0], log: () => {} });
   assert.equal(code, 0);
   assert.ok(calls.find((c) => c[0] === 'herdr' && c.includes('create')).includes('/repo'));
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('run labels the new workspace with the issue identifier', async () => {
+  const dir = keyDir();
+  const { exec, calls } = fakeExec();
+  const fetchFn = async () => ({ ok: true, status: 200, text: async () => SAMPLE });
+  await run({ env: { HERDR_PLUGIN_CONFIG_DIR: dir, HERDR_WFP_CWD: '/repo', HERDR_BIN_PATH: 'herdr' }, exec, fetchFn, select: async (l) => l[0], log: () => {} });
+  const report = calls.find((c) => c.includes('report-metadata'));
+  assert.ok(report, 'reports workspace metadata');
+  assert.deepEqual(report, ['herdr', 'workspace', 'report-metadata', 'w42',
+    '--source', 'plugin:tdi.worktree-from-linear', '--token', 'linear=BIT-1']);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('run still succeeds when the sidebar label cannot be reported', async () => {
+  const dir = keyDir();
+  const { exec: inner } = fakeExec();
+  const exec = (cmd, args = []) => (args[0] === 'workspace'
+    ? { status: 2, stdout: '', stderr: 'unrecognized subcommand\n' }
+    : inner(cmd, args));
+  const fetchFn = async () => ({ ok: true, status: 200, text: async () => SAMPLE });
+  const warnings = [];
+  const logs = [];
+  const code = await run({ env: { HERDR_PLUGIN_CONFIG_DIR: dir, HERDR_WFP_CWD: '/repo' }, exec, fetchFn, select: async (l) => l[0], log: (m) => logs.push(m), warn: (m) => warnings.push(m) });
+  assert.equal(code, 0);
+  assert.match(warnings[0], /sidebar issue label failed/);
+  assert.ok(logs.some((m) => /created worktree for BIT-1/.test(m)), 'still reports the worktree it made');
   rmSync(dir, { recursive: true, force: true });
 });
