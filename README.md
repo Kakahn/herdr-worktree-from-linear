@@ -28,7 +28,7 @@ With one agent or a shell, the left column is a single pane. In Both mode, the a
 
 Pane roles are identified through Herdr metadata. Existing managed panes are never restarted. Changing the selected mode adds missing roles while preserving existing ones; close unwanted panes yourself.
 
-For worktrees previously configured by this fork, the `worktree.opened` hook offers visible preparation and restoration after a native reopen. Press Enter to recreate missing panes. If every requested role is present, the hook does nothing. Unrecognized workspaces are left alone.
+For worktrees previously configured by this fork, the `worktree.opened` hook offers visible preparation and restoration after a native reopen. The preparation panel opens as a split in the reopened workspace, independently of the picker popup preference. Press Enter to recreate missing panes. If every requested role is present, the hook does nothing. Unrecognized workspaces are left alone.
 
 An already-open workspace without identifiable managed panes receives a new workflow tab, preserving all existing terminals. A new tab may therefore also appear after a native reopen. Panes manually distributed across multiple tabs are not repaired automatically; a message asks you to group them first.
 

@@ -170,3 +170,26 @@ test('column repair uses the managed tab rather than the workspace default tab',
   assert.ok(!s.calls.slice(count).some(a=>a[0]==='plugin'||['run','move','create'].includes(a[1])));
  }
 });
+
+for(const placement of ['popup','overlay'])test(`native restoration uses an explicit split target with a ${placement} picker preference`,t=>{
+ const {config,repo}=fixture(t);
+ writeFileSync(join(config,'config.json'),JSON.stringify({placement,popupWidth:'80%',popupHeight:'70%'}));
+ const state=loadState(config);state.tickets.a={repo,cwd:repo,identifier:'ENG-7',mode:'both'};saveState(config,state);
+ const env={HERDR_ENV:'1',HERDR_PLUGIN_EVENT:'worktree.opened',HERDR_PLUGIN_CONFIG_DIR:config,HERDR_PLUGIN_CONTEXT_JSON:JSON.stringify({workspace_id:'reopened',worktree:{checkout_path:repo}})};
+ const calls=[];
+ onOpened(env,args=>{
+  calls.push(args);
+  if(args[0]==='pane')return {panes:[{pane_id:'reopened:p1'}]};
+  const actualPlacement=args[args.indexOf('--placement')+1];
+  if(['popup','overlay'].includes(actualPlacement)&&args.includes('--target-pane'))
+   throw new Error('overlay and popup plugin panes target the active pane');
+  assert.equal(actualPlacement,'split');
+  assert.equal(args[args.indexOf('--workspace')+1],'reopened');
+  assert.equal(args[args.indexOf('--target-pane')+1],'reopened:p1');
+  assert.equal(args[args.indexOf('--entrypoint')+1],'restore');
+  assert.ok(!args.includes('--width')&&!args.includes('--height'));
+  return {};
+ });
+ assert.equal(calls.length,2);
+ assert.equal(JSON.parse(readFileSync(join(config,'config.json'),'utf8')).placement,placement);
+});
