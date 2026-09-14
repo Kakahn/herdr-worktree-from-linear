@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "repositories": {
+    "project": {
+      "copies": [
+        {"path": "apps/web/.env", "whenDirectory": "apps/web"},
+        {"path": "apps/worker/.env", "whenDirectory": "apps/worker"},
+        {"path": "apps/api/.env", "whenDirectory": "apps/api"}
+      ],
+      "links": [
+        ".claude/commands/local",
+        ".claude/skills/local",
+        ".claude/docs/local"
+      ]
+    },
+    "auth": {
+      "copies": [
+        {"path": "apps/auth/.env.local", "whenDirectory": "apps/auth"}
+      ],
+      "links": []
+    }
+  }
+}

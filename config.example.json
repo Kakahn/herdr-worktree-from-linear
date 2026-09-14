@@ -1,11 +1,12 @@
 {
-  "linearApiKey": "lin_api_xxx",
+  "teamKey": "ENG",
+  "assignedToMe": true,
+  "includeTriage": true,
   "issueLimit": 50,
-  "base": "default",
-  "teamKey": "BIT",
-  "repos": { "BIT": "/home/you/bit-repo" },
-  "fzfLayout": "down",
-  "placement": "right",
-  "popupWidth": "80%",
-  "popupHeight": "70%"
+  "placement": "popup",
+  "popupWidth": "85%",
+  "popupHeight": "85%",
+  "network": { "ipv4Only": false, "timeoutMs": 20000 },
+  "preparation": { "enabled": true },
+  "repos": {}
 }

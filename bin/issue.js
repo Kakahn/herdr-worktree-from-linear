@@ -2,6 +2,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { configureNetwork } from '../lib/network.js';
 import { loadConfig } from '../lib/config.js';
 import { fetchIssue } from '../lib/linear.js';
 import { formatIssue, formatIssueMarkdown } from '../lib/render.js';
@@ -95,7 +96,8 @@ async function main() {
   let issue;
   try {
     const config = loadConfig(process.env.HERDR_PLUGIN_CONFIG_DIR);
-    issue = await fetchIssue(config, identifier);
+    configureNetwork(config);
+    issue = await fetchIssue(config, identifier, (u,o)=>fetch(u,{...o,signal:AbortSignal.timeout(config.network?.timeoutMs||20000)}));
   } catch (err) {
     issue = { identifier, error: err.message };
   }

@@ -111,7 +111,7 @@ test('threadComments keeps a reply whose parent is off the page, and flattens de
 
 test('fetchIssue posts with auth and maps a single issue', async () => {
   const ISSUE = JSON.stringify({ data: { issues: { nodes: [
-    { identifier: 'BIT-123', title: 'Do it', description: 'Body', url: 'u', state: { name: 'Todo' }, assignee: { displayName: 'Sven' }, team: { key: 'BIT' },
+    { identifier: 'BIT-123', branchName: 'feature/bit-123', title: 'Do it', description: 'Body', url: 'u', state: { name: 'Todo' }, assignee: { displayName: 'Sven' }, team: { key: 'BIT' },
       priorityLabel: 'High', estimate: 3, labels: { nodes: [{ name: 'Android' }] }, project: { name: 'Upsell' }, cycle: { number: 226, name: null },
       comments: { nodes: [{ id: 'c1', createdAt: '2026-07-22T08:00', body: 'hi', user: { displayName: 'Aurelien' } }] } },
   ] } } });
@@ -119,7 +119,7 @@ test('fetchIssue posts with auth and maps a single issue', async () => {
   const fetchFn = async (url, opts) => { calls.push({ url, opts }); return { ok: true, status: 200, text: async () => ISSUE }; };
   const issue = await fetchIssue({ linearApiKey: 'k' }, 'BIT-123', fetchFn);
   assert.deepEqual(issue, {
-    identifier: 'BIT-123', title: 'Do it', description: 'Body', url: 'u', stateName: 'Todo', assignee: 'Sven',
+    identifier: 'BIT-123', branchName: 'feature/bit-123', teamKey: 'BIT', title: 'Do it', description: 'Body', url: 'u', stateName: 'Todo', assignee: 'Sven',
     priority: 'High', estimate: 3, project: 'Upsell', cycle: '226', labels: ['Android'],
     comments: [{ id: 'c1', parentId: '', createdAt: '2026-07-22T08:00', author: 'Aurelien', body: 'hi', replies: [] }],
   });
