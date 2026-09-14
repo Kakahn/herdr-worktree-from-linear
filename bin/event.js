@@ -22,7 +22,8 @@ export function onOpened(env=process.env,call=client(env.HERDR_BIN_PATH||'herdr'
   // An event must restore its own worktree, independent of the UI's current focus.
   const args=openPickerArgs(PLUGIN,target.path,'right');
   args[args.indexOf('--entrypoint')+1]='restore';
-  args.push('--workspace',target.workspace,'--target-pane',targetPane,'--env',`WFL_RESTORE_KEY=${key}`,'--env',`WFL_RESTORE_WORKSPACE=${target.workspace}`);
+  // A split derives its workspace from target-pane; --workspace is rejected.
+  args.push('--target-pane',targetPane,'--env',`WFL_RESTORE_KEY=${key}`,'--env',`WFL_RESTORE_WORKSPACE=${target.workspace}`);
   call(args);
 }
 if(process.argv[1]?.endsWith('/bin/event.js'))try{onOpened();}catch(e){console.error(`Restoration: ${e.message}`);process.exitCode=1;}

@@ -184,7 +184,11 @@ for(const placement of ['popup','overlay'])test(`native restoration uses an expl
   if(['popup','overlay'].includes(actualPlacement)&&args.includes('--target-pane'))
    throw new Error('overlay and popup plugin panes target the active pane');
   assert.equal(actualPlacement,'split');
-  assert.equal(args[args.indexOf('--workspace')+1],'reopened');
+  // Herdr validates split targeting before opening the pane.
+  if(['split','zoomed'].includes(actualPlacement)&&args.includes('--workspace'))
+   throw new Error('split and zoomed plugin panes target an existing pane; use target_pane_id');
+  assert.ok(!args.includes('--workspace'));
+  assert.ok(args.includes('WFL_RESTORE_WORKSPACE=reopened'));
   assert.equal(args[args.indexOf('--target-pane')+1],'reopened:p1');
   assert.equal(args[args.indexOf('--entrypoint')+1],'restore');
   assert.ok(!args.includes('--width')&&!args.includes('--height'));
