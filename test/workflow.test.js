@@ -197,3 +197,33 @@ for(const placement of ['popup','overlay'])test(`native restoration uses an expl
  assert.equal(calls.length,2);
  assert.equal(JSON.parse(readFileSync(join(config,'config.json'),'utf8')).placement,placement);
 });
+
+for(const scenario of ['fresh','already-open','extra-pane'])test(`native reopen layout: ${scenario}`,async t=>{
+ const {dir,config,repo,g}=fixture(t),wt=join(dir,'wt');
+ g('worktree','add','-b','ticket',wt,'HEAD');
+ const state=loadState(config);state.tickets.a={repo,cwd:wt,branch:'ticket',identifier:'ENG-7',mode:'both'};saveState(config,state);
+ const s=server([],true);
+ const env={HERDR_ENV:'1',HERDR_PLUGIN_CONFIG_DIR:config,HERDR_PLUGIN_EVENT:'worktree.opened',HERDR_PLUGIN_EVENT_JSON:JSON.stringify({event:'worktree.opened',data:{workspace:{workspace_id:'w0'},worktree:{path:wt},already_open:scenario==='already-open'}})};
+ let restoreEnv;
+ onOpened(env,args=>{
+  if(args[0]==='pane')return s.call(args);
+  restoreEnv={...env,HERDR_PANE_ID:'preparation'};
+  for(let i=0;i<args.length;i++)if(args[i]==='--env'){
+   const value=args[++i],eq=value.indexOf('=');restoreEnv[value.slice(0,eq)]=value.slice(eq+1);
+  }
+  return {};
+ });
+ assert.equal(restoreEnv.WFL_RESTORE_ROOT,scenario==='already-open'?undefined:'p0');
+ s.panes.push({pane_id:'preparation',tab_id:'t0',tokens:{}});
+ const call=args=>args[0]==='workspace'?{workspace:{workspace_id:'w0',active_tab_id:'t0',worktree:{checkout_path:wt}}}:s.call(args);
+ await restore({env:restoreEnv,call,prepareFn:async()=>{},askFn:async()=>{
+  if(scenario==='extra-pane')s.panes.push({pane_id:'user-pane',tab_id:'t0',tokens:{}});
+ }});
+ const creates=s.calls.filter(a=>a[0]==='tab'&&a[1]==='create');
+ assert.equal(creates.length,scenario==='fresh'?0:1);
+ const managed=s.panes.filter(p=>p.tokens.wfl_role);
+ assert.equal(managed.length,4);
+ assert.ok(managed.every(p=>p.tab_id===(scenario==='fresh'?'t0':'t1')));
+ assert.ok(!s.calls.some(a=>a[1]==='close'));
+ if(scenario!=='fresh')assert.ok(!s.calls.some(a=>a[1]==='run'&&a[2]==='p0'));
+});

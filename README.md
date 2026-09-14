@@ -30,7 +30,7 @@ Pane roles are identified through Herdr metadata. Existing managed panes are nev
 
 For worktrees previously configured by this fork, the `worktree.opened` hook offers visible preparation and restoration after a native reopen. The preparation panel opens as a split in the reopened workspace, independently of the picker popup preference. Press Enter to recreate missing panes. If every requested role is present, the hook does nothing. Unrecognized workspaces are left alone.
 
-An already-open workspace without identifiable managed panes receives a new workflow tab, preserving all existing terminals. A new tab may therefore also appear after a native reopen. Panes manually distributed across multiple tabs are not repaired automatically; a message asks you to group them first.
+A newly reopened workspace reuses its sole initial shell pane, rebuilding the layout in tab 1. An already-open workspace without identifiable managed panes receives a new workflow tab, preserving existing terminals. If additional panes were opened during preparation, restoration also preserves them by using a separate workflow tab. Panes manually distributed across multiple tabs are not repaired automatically; a message asks you to group them first.
 
 Closing a workspace terminates its processes. Reopening starts new processes for missing roles; it does not automatically resume previous Claude Code or Codex conversations.
 

@@ -24,6 +24,8 @@ export function onOpened(env=process.env,call=client(env.HERDR_BIN_PATH||'herdr'
   args[args.indexOf('--entrypoint')+1]='restore';
   // A split derives its workspace from target-pane; --workspace is rejected.
   args.push('--target-pane',targetPane,'--env',`WFL_RESTORE_KEY=${key}`,'--env',`WFL_RESTORE_WORKSPACE=${target.workspace}`);
+  if(target.alreadyOpen===false && panes.length===1 && !panes[0].tokens?.wfl_role)
+    args.push('--env',`WFL_RESTORE_ROOT=${targetPane}`);
   call(args);
 }
 if(process.argv[1]?.endsWith('/bin/event.js'))try{onOpened();}catch(e){console.error(`Restoration: ${e.message}`);process.exitCode=1;}
