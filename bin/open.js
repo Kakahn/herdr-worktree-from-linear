@@ -8,7 +8,9 @@ const cwd = parseContextCwd(process.env.HERDR_PLUGIN_CONTEXT_JSON, process.env.P
 const placement = readPlacement(process.env.HERDR_PLUGIN_CONFIG_DIR);
 const size = readPopupSize(process.env.HERDR_PLUGIN_CONFIG_DIR);
 
-const res = spawnSync(herdr, openPickerArgs(process.env.HERDR_PLUGIN_ID, cwd, placement, size), { encoding: 'utf8' });
+const args = openPickerArgs(process.env.HERDR_PLUGIN_ID, cwd, placement, size);
+if(process.argv.includes('--direct'))args.push('--env','WFL_DIRECT=1');
+const res = spawnSync(herdr, args, { encoding: 'utf8' });
 if (res.stdout) process.stdout.write(res.stdout);
 if (res.stderr) process.stderr.write(res.stderr);
 

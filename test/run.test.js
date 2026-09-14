@@ -154,7 +154,7 @@ test('run labels the new workspace with the issue identifier', async () => {
   const report = calls.find((c) => c.includes('report-metadata'));
   assert.ok(report, 'reports workspace metadata');
   assert.deepEqual(report, ['herdr', 'workspace', 'report-metadata', 'w42',
-    '--source', 'plugin:tdi.worktree-from-linear', '--token', 'linear=BIT-1']);
+    '--source', 'plugin:kakahn.worktree-from-linear', '--token', 'linear=BIT-1']);
   rmSync(dir, { recursive: true, force: true });
 });
 

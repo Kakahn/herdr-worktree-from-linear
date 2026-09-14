@@ -1,28 +1,9 @@
 #!/usr/bin/env node
-import { run } from '../lib/run.js';
-
-// herdr tears the pane down the instant this process exits, so an error written on the
-// way out flashes past unread — the failure looks like "nothing happened". Hold the pane
-// open until a keypress, capped so a forgotten pane still closes itself.
-function pause() {
-  return new Promise((resolve) => {
-    process.stderr.write('press any key to close\n');
-    const done = () => {
-      clearTimeout(timer);
-      process.stdin.pause();
-      resolve();
-    };
-    const timer = setTimeout(done, 30000);
-    if (process.stdin.isTTY) process.stdin.setRawMode(true);
-    process.stdin.resume();
-    process.stdin.once('data', done);
-  });
+import { workflow } from '../lib/workflow.js';
+import { Cancelled, acknowledge } from '../lib/ui.js';
+import { networkError } from '../lib/network.js';
+try { await workflow(); }
+catch(err) {
+  if(err instanceof Cancelled) console.log('Cancelled.');
+  else { console.error(networkError(err)); try { await acknowledge('Press Enter to close — fix the problem and rerun to retry'); } catch {} process.exitCode=1; }
 }
-
-run()
-  .then((code) => process.exit(code))
-  .catch(async (err) => {
-    process.stderr.write(`${err.message}\n`);
-    await pause();
-    process.exit(1);
-  });

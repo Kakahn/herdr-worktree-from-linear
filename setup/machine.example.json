@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "repositories": {
+    "project": "/path/to/main-checkout",
+    "auth": "/path/to/auth-checkout"
+  }
+}

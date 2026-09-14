@@ -1,13 +1,13 @@
-id = "tdi.worktree-from-linear"
+id = "kakahn.worktree-from-linear"
 name = "Worktree from Linear"
-version = "0.6.0"
-min_herdr_version = "0.7.0"
+version = "1.0.0"
+min_herdr_version = "0.9.0"
 description = "Create a git worktree from a Linear issue and open it as a workspace"
 platforms = ["linux", "macos"]
 
 [[actions]]
 id = "pick"
-title = "Worktree from Linear issue"
+title = "Linear · Worktree from Linear issue"
 contexts = ["workspace", "tab", "pane"]
 command = ["node", "bin/open.js"]
 
@@ -22,3 +22,25 @@ id = "issue"
 title = "Linear issue"
 placement = "split"
 command = ["node", "bin/issue.js"]
+
+[[actions]]
+id = "search"
+title = "Linear · Find issue by identifier"
+contexts = ["workspace", "tab", "pane"]
+command = ["node", "bin/open.js", "--direct"]
+
+[[panes]]
+id = "tool"
+title = "Linear · Development"
+placement = "split"
+command = ["node", "bin/tool.js"]
+
+[[panes]]
+id = "restore"
+title = "Linear · Preparation and restoration"
+placement = "split"
+command = ["node", "bin/restore.js"]
+
+[[events]]
+on = "worktree.opened"
+command = ["node", "bin/event.js"]

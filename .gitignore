@@ -1,2 +1,13 @@
 node_modules/
 *.log
+
+config.json
+workflow-state.json
+.workflow.lock/
+__pycache__/
+
+# Local agent documentation snapshot, not part of the plugin.
+/reference/
+
+/machine.json
+/rules.json

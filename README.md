@@ -1,141 +1,100 @@
-# Worktree from Linear — herdr plugin
+# Worktree from Linear
 
-Keybind, pick an active Linear issue from your team, and herdr opens a git
-worktree on the issue's Linear branch, based on your default branch. Worktree
-only — pair it with
-[worktree-setup](https://github.com/tdi/herdr-worktree-setup) to run per-repo
-setup on `worktree.created`.
+A personal fork of [tdi/herdr-worktree-from-linear](https://github.com/tdi/herdr-worktree-from-linear), based on upstream plugin v0.6.0 (`e7fb804`). It adds an interactive worktree wizard, configurable file preparation, and recoverable development layouts. The original documentation is preserved in [UPSTREAM_README.md](UPSTREAM_README.md).
+
+## Workflow
+
+1. Open **Linear · Worktree from Linear issue** from your command palette, or choose **Linear · Find issue by identifier**.
+2. Pick an issue from the filtered list or enter its exact identifier, such as `ENG-123`. Exact lookup bypasses the list's team, assignee and status filters, subject to the API key's access permissions.
+3. Check the repository and edit the branch name. Linear's `branchName` supplies the initial suggestion; the last choice for this issue and repository is remembered.
+4. For a new branch, choose the main checkout's current HEAD, a local branch, a known remote reference, or another reference/commit. References are resolved locally: run `git fetch` yourself first if you need updated remote references. The selected starting commit is resolved before creation.
+5. Choose **Shell only**, **Claude Code**, **Codex**, or **Both**.
+6. Confirm the summary. The plugin creates or opens the worktree, then prepares local files with visible progress.
+7. Press Enter after preparation finishes to launch the panes. No development instructions are sent to either agent automatically.
+
+```text
++---------------------------+---------------------------+
+| Codex                     | Linear issue              |
+|                           |                           |
++---------------------------+---------------------------+
+| Claude Code               | LazyGit                   |
+|                           |                           |
++---------------------------+---------------------------+
+```
+
+With one agent or a shell, the left column is a single pane. In Both mode, the agents share the same files. Existing branches retain their history; reopening never resets a branch or copies uncommitted changes from the main checkout.
+
+## Reopening worktrees
+
+Pane roles are identified through Herdr metadata. Existing managed panes are never restarted. Changing the selected mode adds missing roles while preserving existing ones; close unwanted panes yourself.
+
+For worktrees previously configured by this fork, the `worktree.opened` hook offers visible preparation and restoration after a native reopen. The preparation panel opens as a split in the reopened workspace, independently of the picker popup preference. Press Enter to recreate missing panes. If every requested role is present, the hook does nothing. Unrecognized workspaces are left alone.
+
+A newly reopened workspace reuses its sole initial shell pane, rebuilding the layout in tab 1. An already-open workspace without identifiable managed panes receives a new workflow tab, preserving existing terminals. If additional panes were opened during preparation, restoration also preserves them by using a separate workflow tab. Panes manually distributed across multiple tabs are not repaired automatically; a message asks you to group them first.
+
+Closing a workspace terminates its processes. Reopening starts new processes for missing roles; it does not automatically resume previous Claude Code or Codex conversations.
 
 ## Install
 
-```bash
-herdr plugin install tdi/herdr-worktree-from-linear
+Requirements: Herdr 0.9+, Node 22+, Python 3 for file preparation, Git and LazyGit. Install `claude` and/or `codex` for the corresponding modes. fzf is optional; a numbered picker is available as a fallback.
+
+Clone this fork and run the activation script **from a Herdr terminal**:
+
+```sh
+git clone https://github.com/Kakahn/herdr-worktree-from-linear.git
+cd herdr-worktree-from-linear
+git checkout feature/worktree-workflow
+bash scripts/activate.sh
 ```
 
-## Prerequisites
+The script copies the original plugin's personal settings into the private `kakahn.worktree-from-linear` configuration directory without printing the API key. An existing fork configuration is preserved. It links this local fork, then disables the original plugin. Your command palette shortcut does not change, and the Herdr server does not need to restart.
 
-- **`fzf`** — the fuzzy picker (`brew install fzf`). Required for the intended
-  overlay; without it a plain numbered prompt is used.
-- **`glow`** — optional (`brew install glow`); renders the issue pane's markdown.
-  Without it the pane prints the same plain-text panel as before.
-- **A Linear personal API key** — Linear → Settings → Security & access → API →
-  create a personal key. Put it in the plugin config, or export it as
-  `LINEAR_API_KEY` (below).
-- **`git`** and **Node.js** (herdr invokes `node`). No `gh` needed.
+To switch back:
 
-## Configure
-
-`config.json` in the plugin config dir (`herdr plugin config-dir tdi.worktree-from-linear`):
-
-```json
-{
-  "linearApiKey": "lin_api_xxx",
-  "issueLimit": 50,
-  "base": "default",
-  "teamKey": "BIT",
-  "repos": { "BIT": "/home/you/bit-repo" },
-  "assignedToMe": true,
-  "includeTriage": true,
-  "placement": "right",
-  "fzfLayout": "down",
-  "showIssueDetails": true,
-  "popupWidth": "80%",
-  "popupHeight": "70%"
-}
+```sh
+bash scripts/rollback.sh
 ```
 
-- `linearApiKey` (required, unless supplied via the environment — see below).
-- `issueLimit` — max issues listed (default 50).
-- `base` — where the new branch starts: `"default"` (repo default branch),
-  `"head"` (current checkout), or an explicit branch name (e.g. `"develop"`).
-- `teamKey` — optional; restrict to one team (e.g. `BIT`).
-- `repos` — optional; maps a Linear team key to the repo the worktree is created
-  in, so a pick routes by the issue's team rather than by whichever pane invoked
-  the action:
+Worktrees, panes and personal settings are preserved.
 
-  ```json
-  "repos": { "WIN": "/home/you/windmill", "DOCS": "/home/you/docs" }
-  ```
+## Configuration
 
-  A team absent from the map falls back to the invoking pane's repo, which is
-  also the whole behaviour when `repos` is unset. With a mapped team you no
-  longer need to invoke the action from inside a git repo at all.
-- `assignedToMe` — optional; when `true`, only list issues assigned to you (the
-  API key's user). Default `false` (all assignees).
-- `includeTriage` — optional; when `true`, also list issues in the triage state
-  (on top of the unstarted/started defaults). Default `false`.
-- `placement` — where the picker pane opens: `"right"` (default), `"left"`,
-  `"top"`, `"down"` (splits, so your work stays visible), `"overlay"`
-  (full-screen), or `"popup"` (centered floating window). `left`/`top` open a
-  right/down split then swap into place.
-- `fzfLayout` — `"down"` (default, search bar at the bottom) or `"top"` (search bar at the top). The picker renders as a compact window either way.
-- `showIssueDetails` — optional; when `true`, a fresh worktree create also opens
-  a pane showing the picked issue's details (see below). Default `false`.
-- `popupWidth` / `popupHeight` — size of the `popup` placement, as a percentage
-  (`"80%"`) or a terminal-cell count (`120`). Only used when `placement` is
-  `popup`. Defaults `80%` × `70%`.
+Start from [config.example.json](config.example.json). Keep your API key in the private plugin `config.json` or `LINEAR_API_KEY`, never in this repository. The private `workflow-state.json` stores branch choices, tool modes and local paths; do not share it either.
 
-### API key from the environment
+| Setting | Purpose |
+| --- | --- |
+| `teamKey`, `assignedToMe`, `includeTriage`, `issueLimit` | Issue list filters inherited from upstream |
+| `placement`, `popupWidth`, `popupHeight` | Issue picker placement and size |
+| `network.ipv4Only` | Optional IPv4 connection workaround; disabled by default |
+| `network.timeoutMs` | Maximum duration of a Linear request |
+| `preparation.enabled` | File preparation, enabled unless explicitly disabled |
+| `preparation.machineFile` | Optional machine settings path; `~/` is supported |
+| `preparation.rulesFile` | Optional file preparation rules path; `~/` is supported |
+| `repos` | Optional Linear team key to local repository path mapping |
 
-If `linearApiKey` is absent from `config.json`, the plugin falls back to the
-`LINEAR_API_KEY` environment variable — the same name Linear's own SDK and CLI
-use. Keep the key in a secret manager instead of on disk: herdr spawns plugin
-actions as child processes, so anything that exports the variable into the herdr
-server's environment works — `op run --`, a systemd `EnvironmentFile=`, direnv,
-or a plain shell export before `herdr`. `config.json` wins when both are set.
+Without a `repos` mapping, the invoking terminal determines the repository. The wizard replaces the upstream `base` setting with an interactive choice and always includes the issue details in its layout.
 
-`popup` opens the picker as a centered floating window that doesn't disturb your
-pane layout — it requires **herdr ≥ 0.7.4** (older servers reject it; the plugin
-still works with the other placements).
+### File preparation
 
-## Use
+Preparation is independent of any desktop app or company repository structure. Configure your own repository paths and copy/link rules:
 
-Bind the `Worktree from Linear issue` action to a key (herdr `[[keys.command]]`,
-`type = "plugin_action"`, `command = "tdi.worktree-from-linear.pick"`), or invoke
-it from the action menu. It lists your team's active issues; pick one and herdr
-creates + focuses a worktree on the issue's branch. If a worktree for that branch
-already exists, it is opened instead.
+- Put `machine.json` in the private plugin configuration directory, using [setup/machine.example.json](setup/machine.example.json) as a starting point.
+- Put `rules.json` alongside it to override the generic examples in [setup/rules.json](setup/rules.json).
+- Match repository keys between these two files. Paths belong to your local configuration, not the shared plugin.
+- Alternatively, point `preparation.machineFile` and `preparation.rulesFile` to existing compatible files.
+- Set `preparation.enabled` to `false` explicitly if a project needs no file preparation.
 
-With `showIssueDetails: true`, a fresh create also opens a pane above the agent
-pane in the new workspace showing the issue's details (identifier, title, state,
-assignee, priority, estimate, project, cycle, labels, the description, and the
-comment threads oldest-first). The plugin fetches these from Linear with your
-`linearApiKey` and renders them itself — no extra CLI needed. Skipped when an
-existing worktree is re-opened, to avoid stacking duplicate panes.
+The helper copies only missing, ignored, untracked local files and preserves existing destinations. New file copies use private permissions. Unsafe symlinks and tracked destinations are rejected. Optional shared resource directories can be linked. No code from the worktree is executed, dependencies are not installed, and containers are not started.
 
-With `glow` installed the description and comments are rendered as markdown at
-the pane's width, and a resize re-renders to fit. Without it — or when the pane's
-output is not a terminal — the same content prints as plain text.
+Application directories absent from the selected commit are reported and skipped. A worktree contains committed code only: copying an environment file cannot add an uncommitted application.
 
-## Sidebar issue label
+If preparation fails, the worktree and any completed preparation remain in place. Fix the reported problem, then select the issue again; its custom branch name was saved before preparation began. Agents launch only after successful preparation and confirmation. Avoid configuring another setup hook to copy the same files concurrently.
 
-On herdr 0.7.4+, creating or opening an issue worktree also publishes a `linear`
-workspace metadata token, so the sidebar entry shows which issue the worktree is
-for: `BIT-1234`. The token carries no TTL, so it stays for the life of the
-workspace, and reporting it never affects the exit code — if herdr rejects it,
-the plugin logs a warning and the worktree is created all the same.
+## Tests
 
-Display it by adding `$linear` to `[ui.sidebar.spaces].rows` in
-`~/.config/herdr/config.toml`, then `herdr config check` and
-`herdr server reload-config`. This is herdr's default layout with the token
-appended; merge it into your own rows rather than replacing them:
-
-```toml
-[ui.sidebar.spaces]
-rows = [
-  ["state_icon", "workspace"],
-  ["branch", "git_status", "$linear"],
-]
+```sh
+node --test
+python3 setup/test_prepare.py
 ```
 
-- The plugin never edits herdr config; this is a one-time display setting.
-- Useful mainly when your branch names bury or truncate the identifier — the
-  `branch` token already shows it otherwise.
-- To drop the label, use the workspace id from `herdr workspace list`:
-  `herdr workspace report-metadata <id> --source plugin:tdi.worktree-from-linear --clear-token linear`.
-
-## Develop
-
-```bash
-npm test
-```
+Tests use disposable Git repositories/worktrees and simulated Herdr responses. They do not control a live session, call Linear, or launch agents. See [VERIFICATION.md](VERIFICATION.md) for the verification scope and remaining manual checks.

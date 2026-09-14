@@ -29,7 +29,7 @@ test('parseWorkspaceId returns null for junk instead of throwing', () => {
 test('buildReportArgs targets the workspace with this plugin as the source', () => {
   assert.deepEqual(buildReportArgs('w42', 'BIT-1234'), [
     'workspace', 'report-metadata', 'w42',
-    '--source', 'plugin:tdi.worktree-from-linear',
+    '--source', 'plugin:kakahn.worktree-from-linear',
     '--token', 'linear=BIT-1234',
   ]);
 });
@@ -39,7 +39,7 @@ test('reportIssue reports the identifier and asks for no TTL', () => {
   const exec = (cmd, args) => (calls.push([cmd, ...args]), { status: 0, stdout: '', stderr: '' });
   assert.equal(reportIssue('w42', 'BIT-1234', { exec, herdrBin: 'herdr' }), true);
   assert.deepEqual(calls, [['herdr', 'workspace', 'report-metadata', 'w42',
-    '--source', 'plugin:tdi.worktree-from-linear', '--token', 'linear=BIT-1234']]);
+    '--source', 'plugin:kakahn.worktree-from-linear', '--token', 'linear=BIT-1234']]);
   assert.equal(calls[0].includes('--ttl-ms'), false);
 });
 

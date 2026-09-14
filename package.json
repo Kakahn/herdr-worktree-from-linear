@@ -1,10 +1,13 @@
 {
   "name": "herdr-worktree-from-linear",
-  "version": "0.5.0",
-  "description": "Create a git worktree from a Linear issue and open it as a herdr workspace",
+  "version": "1.0.0",
+  "description": "Linear worktree wizard with configurable preparation and recoverable development layouts",
   "type": "module",
   "private": true,
   "scripts": {
     "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
