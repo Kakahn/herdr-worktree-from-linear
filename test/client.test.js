@@ -7,7 +7,7 @@ const commands = [
   ['pane', 'report-metadata', 'p1', '--source', 'plugin:test', '--token', 'role=shell'],
   ['pane', 'rename', 'p1', 'Linear · shell'],
   ['pane', 'swap', '--pane', 'p2', '--direction', 'up'],
-  ['pane', 'move', 'p2', '--target-pane', 'p1', '--split', 'down', '--no-focus'],
+  ['pane', 'move', 'p2', '--tab', 't1', '--target-pane', 'p1', '--split', 'down', '--no-focus'],
   ['pane', 'focus', '--pane', 'p2', '--direction', 'left'],
   ['tab', 'create', '--workspace', 'w1', '--cwd', '/repo with spaces', '--no-focus'],
   ['tab', 'focus', 't1'],

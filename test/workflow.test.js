@@ -48,6 +48,12 @@ function server(existing=[],already=false) {
   if(a==='pane'&&b==='list')return {panes:panes.map(p=>({...p,tokens:{...p.tokens}}))};
   if(a==='tab'&&b==='create'){const p={pane_id:`p${i++}`,tab_id:'t1',tokens:{}};panes.push(p);return {root_pane:p,tab:{tab_id:'t1'}};}
   if(a==='plugin'){const target=panes.find(p=>p.pane_id===args[args.indexOf('--target-pane')+1]);const p={pane_id:`p${i++}`,tab_id:target.tab_id,tokens:{}};panes.push(p);return {plugin_pane:{pane:p}};}
+  if(a==='pane'&&b==='move'){
+   // Herdr 0.9.0 requires --tab even when --target-pane is present.
+   assert.ok(args.includes('--tab'),'pane move requires an explicit destination tab');
+   const target=panes.find(p=>p.pane_id===args[args.indexOf('--target-pane')+1]);
+   assert.equal(args[args.indexOf('--tab')+1],target.tab_id,'move must use the target pane tab');
+  }
   if(a==='pane'&&b==='report-metadata'){const p=panes.find(p=>p.pane_id===args[2]);for(let j=0;j<args.length;j++)if(args[j]==='--token'){const [k,v]=args[j+1].split('=');p.tokens[k]=v;}}
   return {};
  };
@@ -149,4 +155,18 @@ test('layout completes through CLI adapter with silent metadata and run acknowle
  const count=s.calls.length;
  ensureLayout(args);
  assert.ok(!s.calls.slice(count).some(a=>a[0]==='plugin'||a[1]==='run'||a[1]==='create'));
+});
+
+test('column repair uses the managed tab rather than the workspace default tab', () => {
+ for(const roles of [['codex','claude'],['issue','lazygit']]) {
+  const existing=roles.map(role=>({...tagged(role,role),tab_id:'managed-tab'}));
+  const s=server(existing,true);
+  ensureLayout({...s,identifier:'ENG-7',mode:'both',cwd:'/wt'});
+  const moves=s.calls.filter(a=>a[0]==='pane'&&a[1]==='move');
+  assert.equal(moves.length,1);
+  assert.equal(moves[0][moves[0].indexOf('--tab')+1],'managed-tab');
+  const count=s.calls.length;
+  ensureLayout({...s,identifier:'ENG-7',mode:'both',cwd:'/wt'});
+  assert.ok(!s.calls.slice(count).some(a=>a[0]==='plugin'||['run','move','create'].includes(a[1])));
+ }
 });
