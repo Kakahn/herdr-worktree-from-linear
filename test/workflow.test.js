@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {findIssue,branchPlan,workflow} from '../lib/workflow.js';
-import {ensureLayout,quote} from '../lib/layout.js';
+import {client,ensureLayout,quote} from '../lib/layout.js';
 import {validBranch,worktrees,git} from '../lib/git.js';
 import {loadState,saveState,stateKey,lock} from '../lib/state.js';
 import {networkError} from '../lib/network.js';
@@ -133,4 +133,20 @@ test('full successful workflow creates once then reopens remembered custom branc
  };
  const opts={env:{HERDR_ENV:'1',HERDR_PLUGIN_CONFIG_DIR:config},ui,fetchFn:async()=>response([issue]),call,prepareFn:async()=>events.push('prepare'),layoutFn:()=>events.push('layout'),log:()=>{}};
  assert.equal(await workflow(opts),0);assert.equal(await workflow(opts),0);assert.deepEqual(events,['create','prepare','layout','open','prepare','layout']);
+});
+
+test('layout completes through CLI adapter with silent metadata and run acknowledgements', () => {
+ const s=server([],true);
+ const call=client('herdr', (_bin,args)=>{
+  assert.ok(!args.includes('--json'));
+  const result=s.call(args);
+  const silent=['pane report-metadata','pane run','workspace report-metadata'].includes(args.slice(0,2).join(' '));
+  return {status:0,stdout:silent?'':JSON.stringify({result})};
+ });
+ const args={...s,call,identifier:'ENG-7',mode:'both',cwd:'/wt'};
+ assert.deepEqual(Object.keys(ensureLayout(args)).sort(),['claude','codex','issue','lazygit']);
+ assert.equal(s.calls.filter(a=>a[1]==='run').length,1);
+ const count=s.calls.length;
+ ensureLayout(args);
+ assert.ok(!s.calls.slice(count).some(a=>a[0]==='plugin'||a[1]==='run'||a[1]==='create'));
 });

@@ -34,13 +34,32 @@ test('pane run receives the exact command with no appended child arguments', () 
   const command = "node '/plugin path/bin/tool.js' 'codex' '/worktree path'";
   const call = client('herdr', (bin, args) => {
     assert.deepEqual(args, ['pane', 'run', 'p1', command]);
-    return { status: 0, stdout: '{"result":{"type":"command_sent"}}' };
+    return { status: 0, stdout: '' };
   });
-  assert.equal(call(['pane', 'run', 'p1', command]).type, 'command_sent');
+  assert.deepEqual(call(['pane', 'run', 'p1', command]), {});
 });
 test('CLI failure remains visible and does not retry a mutating command', () => {
   let attempts = 0;
   const call = client('herdr', () => { attempts++; return { status: 1, stderr: 'pane not found' }; });
   assert.throws(() => call(['pane', 'run', 'p1', 'codex']), /pane not found/);
   assert.equal(attempts, 1);
+});
+
+for (const args of [['pane', 'report-metadata'], ['workspace', 'report-metadata']]) {
+  test(`${args.join(' ')} accepts a silent success acknowledgement`, () => {
+    const call = client('herdr', () => ({ status: 0, stdout: '' }));
+    assert.deepEqual(call(args), {});
+  });
+}
+for (const stdout of ['', 'not json', 'null', '{}']) {
+  test(`tab create rejects an unusable response ${JSON.stringify(stdout)} without retry`, () => {
+    let attempts = 0;
+    const call = client('herdr', () => { attempts++; return { status: 0, stdout }; });
+    assert.throws(() => call(['tab', 'create']), /Herdr tab create:.*(JSON|result)/);
+    assert.equal(attempts, 1);
+  });
+}
+test('a JSON error response is reported with command context', () => {
+  const call = client('herdr', () => ({ status: 0, stdout: '{"error":{"message":"pane not found"}}' }));
+  assert.throws(() => call(['pane', 'report-metadata']), /Herdr pane report-metadata: pane not found/);
 });
